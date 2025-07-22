@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculateur d'Empreinte CO2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2e8b57;
+        }
+        label {
+            font-size: 1.1em;
+            margin: 10px 0 5px;
+            color: #333;
+        }
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0 20px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            transition: border-color 0.3s;
+            box-sizing: border-box;
+        }
+        input:focus, select:focus {
+            border-color: #2e8b57;
+            outline: none;
+        }
+        button {
+            background-color: #2e8b57;
+            color: #fff;
+            padding: 12px 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #245c41;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #e0ffe0;
+            border-radius: 5px;
+            border: 1px solid #2e8b57;
+            text-align: center;
+            font-size: 1.2em;
+            color: #2e8b57;
+            display: none;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            margin-top: 30px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="image/Logo.jpg" alt="Logo de l'entreprise" style="display: block; margin: 0 auto; max-width:350px;">
+    <h1>Calculateur d'Empreinte CO2</h1>
+    <p>Entrez les informations pour calculer votre empreinte carbone par critère et transport vers la filiale.</p>
+
+    <label for="pays">Sélectionnez un pays d'origine :</label>
+    <select id="pays">
+        <option value="france">France</option>
+    </select>
+
+    <label for="filiale">Sélectionnez une filiale :</label>
+    <select id="filiale">
+        <option value="HFES">HFES</option>
+        <option value="HFPL">HFPL</option>
+        <option value="HFRO">HFRO</option>
+        <option value="HFGB">HFGB</option>
+        <option value="HFSA">HFSA</option>
+    </select>
+
+    <label for="critere">Choisissez un critère :</label>
+    <select id="critere">
+        <option value="UM">Nombre de palettes</option>
+        <option value="filtre">Nombre de Filtres</option>
+        <option value="expe">Nombre d'expéditions</option>
+        <option value="poids">Poids de l'expédition (en kg)</option>
+    </select>
+
+    <label for="quantite">Quantité :</label>
+    <input type="number" id="quantite" placeholder="Entrez la quantité" required>
+
+    <button onclick="calculerCO2()">Calculer</button>
+
+    <div id="result" class="result"></div>
+    <div id="co2-widget-container" style="margin-top: 30px; text-align: center;"></div>  
+</div>
+
+<div class="footer">
+    <p>&copy; 2025 Calculateur CO2 - Tous droits réservés</p>
+</div>
+
+<script>
+    const co2Data = {
+        "HFES":   { UM: 25.07, filtre: 0.081, expe: 747.82, poids: 0.1223 },
+        "HFPL":   { UM: 24.90, filtre: 0.090, expe: 865.27, poids: 0.1283 },
+        "HFRO":   { UM: 33.88, filtre: 0.153, expe: 1098.82, poids: 0.1739 },
+        "HFGB":   { UM: 10.03, filtre: 0.070, expe: 351.20, poids: 0.0954 },
+        "HFSA":   { UM: 0.34,  filtre: 0.003, expe: 12.05,  poids: 0.0050 }
+    };
+
+    function calculerCO2() {
+        const filiale = document.getElementById("filiale").value;
+        const critere = document.getElementById("critere").value;
+        const quantite = parseFloat(document.getElementById("quantite").value);
+        const resultDiv = document.getElementById("result");
+
+        if (isNaN(quantite) || quantite <= 0) {
+            alert("Veuillez entrer une quantité valide.");
+            return;
+        }
+
+        const facteur = co2Data[filiale][critere];
+        const emission = facteur * quantite;
+
+        let label;
+        switch (critere) {
+            case "UM":
+                label = "palettes";
+                break;
+            case "filtre":
+                label = "filtres";
+                break;
+            case "expe":
+                label = "expéditions";
+                break;
+            case "poids":
+                label = "kg de filtres transportés";
+                break;
+            default:
+                label = "unités";
+        }
+
+        resultDiv.innerHTML = `Émission de CO2 pour ${quantite} ${label} vers ${filiale.charAt(0).toUpperCase() + filiale.slice(1)} : <strong>${emission.toFixed(2)} kg</strong>`;
+        resultDiv.style.display = "block";
+
+        const widgetContainer = document.getElementById("co2-widget-container");
+        widgetContainer.innerHTML = ""; // Réinitialise si déjà présent
+
+        const scriptEtiquette = document.createElement("script");
+        scriptEtiquette.name = "impact-co2";
+        scriptEtiquette.src = "https://impactco2.fr/iframe.js";
+        scriptEtiquette.setAttribute("data-type", "comparateur/etiquette");
+        scriptEtiquette.setAttribute("data-search", `?value=${emission.toFixed(0)}&comparisons=francais,ecran,haricotsrouges&language=fr&theme=default`);
+        
+        scriptEtiquette.onload = function() {
+            console.log("Le script du comparateur a été chargé.");
+        };
+        
+        scriptEtiquette.onerror = function() {
+            console.error("Erreur lors du chargement du script du comparateur.");
+        };
+
+        widgetContainer.appendChild(scriptEtiquette);
+    }
+</script>
+
+<!-- Script ajouté comme demandé -->
+<script name="impact-co2" src="https://impactco2.fr/iframe.js" data-type="comparateur" data-search="?value=0&comparisons=voiturethermique,tgv,streamingvideo,hotel,lavelinge,repasavecduboeuf,livraisondomicile,tshirtencoton&language=fr&theme=default"></script>
+</body>
+</html>
+
+
+
+
+
+
+

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculateur d'Empreinte CO2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f0f8ff;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #2e8b57;
+    }
+    label {
+      font-size: 1.1em;
+      margin: 10px 0 5px;
+      color: #333;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0 20px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #2e8b57;
+      color: #fff;
+      padding: 12px 20px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .result {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #e0ffe0;
+      border-radius: 5px;
+      border: 1px solid #2e8b57;
+      text-align: center;
+      font-size: 1.2em;
+      color: #2e8b57;
+      display: none;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.9em;
+      margin-top: 30px;
+      color: #888;
+    }
+    .results {
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 15px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    #map {
+      height: 400px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <img src="image/Logo.jpg" alt="Logo de l'entreprise" style="display: block; margin: 0 auto; max-width:350px;">
+  <h1>Calculateur d'Empreinte CO2</h1>
+  <p>Renseignez les informations nécessaires pour estimer votre empreinte carbone en fonction du type de transport, du mode utilisé et de la destination finale à travers le monde.</p>
+
+  <label for="villeDepart">Ville de départ :</label>
+  <input type="text" id="villeDepart" placeholder="Ex : Paris" />
+
+  <label for="villeArrivee">Ville d'arrivée :</label>
+  <input type="text" id="villeArrivee" placeholder="Ex : Lyon" />
+
+  <button onclick="calculerDistances()">Calculer les distances</button>
+
+  <div class="results">
+    <div id="distanceRoutiere"></div>
+    <div id="distanceAerienne"></div>
+    <div id="distanceMaritime"></div>
+  </div>
+
+  <div id="map"></div>
+
+  <label for="typeColis">Sélectionnez un type d'expédition :</label>
+<select id="typeColis">
+  <option value="Colis Standard">Colis Standard</option>
+  <option value="Colis Express">Colis Express</option>
+  <option value="Palette">Palette</option>
+</select>
+
+  <label for="zoneGeographique">Sélectionnez une zone géographique :</label>
+<select id="zoneGeographique">
+  <option value="National">National</option>
+  <option value="International">International</option>
+</select>
+
+  <label for="transporteur">Sélectionnez un transporteur :</label>
+  <select id="transporteur">
+  <option value="GLS (National)">GLS (National)</option>
+  <option value="DPD (National)">DPD (National)</option>
+  <option value="DPD (International)">DPD (International)</option>
+  <option value="Laposte (National)">Laposte (National)</option>
+  <option value="Ciblex (National)">Ciblex (National)</option>
+  <option value="Chronopost (National)">Chronopost (National)</option>
+  <option value="Kuehne + Nagel (Messagerie National)">Kuehne + Nagel (Messagerie National)</option>
+  <option value="Kuehne + Nagel (Affrêtement National)">Kuehne + Nagel (Affrêtement National)</option>
+  <option value="Kuehne + Nagel (Messagerie International)">Kuehne + Nagel (Messagerie International)</option>
+  <option value="DHL Freight (National)">DHL Freight (National)</option>
+  <option value="DHL Freight (Messagerie International)">DHL Freight (Messagerie International)</option>
+  <option value="DHL Freight (Messagerie International Express)">DHL Freight (Messagerie International Express)</option>  
+  <option value="Fedex (National)">Fedex (National)</option>
+  <option value="Fedex (Économie Express International)">Fedex (Économie Express International)</option>
+  <option value="Fedex (Express International)">Fedex (Express International)</option>
+  <option value="Idoux (International)">Idoux (International)</option>
+  <option value="Dachser (Messagerie International)">Dachser (Messagerie International)</option>
+  <option value="DHL (Monde)">DHL (Monde)</option>
+  <option value="DSV (International)">DSV (International)</option>
+  <option value="Ovrsea (International)">Ovrsea (International)</option>
+  <option value="M&M (International) - Partie Route + Mer Groupage"> M&M (International) - Partie Route + Mer Groupage</option>
+  <option value="M&M (International) - Partie Route + Groupage Aérien"> M&M (International) - Partie Route + Groupage Aérien</option>
+  <option value="DB Schenker (International)">DB Schenker (International)</option>
+  <option value="Qualitair et Sea (National) - Depuis Pontarlier jusqu'à l'aéroport de LYS ou le port de FOS SUR MER">Qualitair et Sea (National) - Depuis Pontarlier jusqu'à l'aéroport de LYS ou le port de FOS SUR MER</option>
+  <option value="Qualitair et Sea (International) - Depuis l'aéroport de LYS juqu'à l'aéroport du pays client">Qualitair et Sea (International) - Depuis l'aéroport de LYS juqu'à l'aéroport du pays client</option>
+  <option value="Qualitair et Sea (International) - Depuis FOS SUR MER jusqu'au port du pays client">Qualitair et Sea (International) - Depuis FOS SUR MER jusqu'au port du pays client</option>
+  <option value="Qualitair et Sea (International) - Depuis l'aéroport ou le port du pays client jusqu'au client final">Qualitair et Sea (International) - Depuis l'aéroport ou le port du pays client jusqu'au client final</option>
+</select>
+
+
+<label for="modeTransport">Sélectionnez un mode de transport :</label>
+<select id="modeTransport">
+  <option value="Trafic Routier">Trafic Routier</option>
+  <option value="Trafic Aérien">Trafic Aérien</option>
+  <option value="Trafic Maritime">Trafic Maritime</option>
+</select>
+
+
+  <label for="distanceParcourue">Distance parcourue (en km) :</label>
+  <input type="number" id="distanceParcourue" placeholder="Entrez la distance calculée" required>
+
+  <label for="tonnage">Poids de l'expédition (en kg) :</label>
+  <input type="number" id="tonnage" placeholder="Entrez le tonnage" required>
+
+  <button onclick="calculerCO2()">Calculer</button>
+
+  <div id="result" class="result"></div>
+  <div id="co2-widget-container" style="margin-top: 30px; text-align: center;"></div>  
+</div>
+
+<!-- Bouton pour accéder à l'outil de CO2 des filiales -->
+<div style="max-width: 500px; margin: 0 auto;">
+  <button onclick="window.location.href='Filiales.html'" style="
+    background-color: #2e8b57;
+    color: #fff;
+    border: none;
+    padding: 14px 24px;
+    font-size: 1.1em;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  " 
+  onmouseover="this.style.backgroundColor='#276b48'; this.style.transform='translateY(-2px)';"
+  onmouseout="this.style.backgroundColor='#2e8b57'; this.style.transform='none';">
+    Calculateur de CO2 des filiales
+  </button>
+</div>
+
+<div class="footer">
+  <p>&copy; 2025 Calculateur CO2 - Tous droits réservés</p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+
+<script>
+  var map = L.map('map').setView([47, 2], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var control = null;
+  var ligneDroite = null;
+
+  function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+  }
+
+  function distanceAerienne(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+              Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
+  async function geocodeVille(ville) {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(ville)}&limit=1`;
+    const resp = await fetch(url);
+    const data = await resp.json();
+    if (data.length > 0) {
+      return [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+    } else {
+      throw new Error("Ville non trouvée : " + ville);
+    }
+  }
+
+  async function calculerDistances() {
+    const villeDepart = document.getElementById('villeDepart').value.trim();
+    const villeArrivee = document.getElementById('villeArrivee').value.trim();
+    if (!villeDepart || !villeArrivee) {
+      alert('Veuillez saisir les deux villes');
+      return;
+    }
+
+    try {
+      document.getElementById('distanceRoutiere').textContent = 'Calcul en cours...';
+      document.getElementById('distanceAerienne').textContent = '';
+      document.getElementById('distanceMaritime').textContent = '';
+
+      const start = await geocodeVille(villeDepart);
+      const end = await geocodeVille(villeArrivee);
+
+      if (control) { map.removeControl(control); control = null; }
+      if (ligneDroite) { map.removeLayer(ligneDroite); ligneDroite = null; }
+
+      control = L.Routing.control({
+        waypoints: [L.latLng(start[0], start[1]), L.latLng(end[0], end[1])],
+        routeWhileDragging: false,
+        show: false,
+        addWaypoints: false,
+        draggableWaypoints: false,
+        fitSelectedRoutes: true,
+        createMarker: () => null
+      }).addTo(map);
+
+      control.on('routesfound', function (e) {
+        const route = e.routes[0];
+        document.getElementById('distanceRoutiere').textContent = `🛣️ Distance routière : ${(route.summary.totalDistance / 1000).toFixed(2)} km`;
+      });
+
+      control.on('routingerror', () => {
+        document.getElementById('distanceRoutiere').textContent = '❌ Impossible de calculer la distance routière.';
+      });
+
+      ligneDroite = L.polyline([start, end], { color: 'red', dashArray: '5,10' }).addTo(map);
+
+      const distAerienne = distanceAerienne(start[0], start[1], end[0], end[1]);
+      document.getElementById('distanceAerienne').textContent = `✈️ Distance aérienne : ${distAerienne.toFixed(2)} km`;
+
+      const facteurMaritime = 1.3;
+      const distMaritime = distAerienne * facteurMaritime;
+      document.getElementById('distanceMaritime').textContent = `🚢 Distance maritime approximative : ${distMaritime.toFixed(2)} km`;
+
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  function calculerCO2() {
+    const distance = parseFloat(document.getElementById("distanceParcourue").value);
+    const tonnage = parseFloat(document.getElementById("tonnage").value);
+    const colis = document.getElementById("typeColis").value;
+    const transporteur = document.getElementById("transporteur").value;
+    const zone = document.getElementById("zoneGeographique").value;
+    const resultDiv = document.getElementById("result");
+
+    if (isNaN(distance) || distance <= 0 || isNaN(tonnage) || tonnage <= 0) {
+      alert("Veuillez entrer une distance et un tonnage valides.");
+      return;
+    }
+
+    const mode = document.getElementById("modeTransport").value;
+    const cle = `${colis}:${zone}:${transporteur}:${mode}:`;
+    const facteur = parseFloat(facteursEmission[cle]);
+
+  if (isNaN(facteur)) {
+   alert("Aucun facteur d’émission trouvé pour cette combinaison.");
+   return;
+}
+    const emission = (facteur * tonnage * distance) / 1000 ;
+
+    const facteurImport = 0.114;
+const emissionImport = (facteurImport * tonnage * distance) / 1000 ;
+
+resultDiv.innerHTML = `
+  <p>⬇️ Émission totale de CO2 à l'import : <strong>${emissionImport.toFixed(2)} kg</strong></p>
+  <p>⬆️ Émission totale de CO2 à l'export : <strong>${emission.toFixed(2)} kg</strong></p>
+  <p>🔄 Émissions totales de CO2 du cycle complet (import + export) : <strong>${(emissionImport + emission).toFixed(2)} kg</strong></p>
+`;
+
+resultDiv.style.display = "block";
+
+
+    const widgetContainer = document.getElementById("co2-widget-container");
+    widgetContainer.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.name = "impact-co2";
+    script.src = "https://impactco2.fr/iframe.js";
+    script.setAttribute("data-type", "comparateur");
+    script.setAttribute("data-search", `?value=${emission.toFixed(0)}&comparisons=friends,alimentationsmartphone,madeleine,stockagedonnee&language=fr&theme=default`);
+    widgetContainer.appendChild(script);
+  }
+</script>
+<script>
+  const facteursEmission = {
+
+    // FRANCE - Colis Standard
+    "Colis Standard:National:GLS (National):Trafic Routier:": "0.461",
+    "Colis Standard:National:DPD (National):Trafic Routier:": "0.410",
+    "Colis Standard:National:Laposte (National):Trafic Routier:": "0.677",
+
+    // FRANCE - Colis Express
+    "Colis Express:National:Ciblex (National):Trafic Routier:": "1.29",
+    "Colis Express:National:Fedex (National):Trafic Routier:": "0.182",
+    "Colis Express:National:Chronopost (National):Trafic Routier:": "0.701",
+   
+    // FRANCE - Palette
+    "Palette:National:Kuehne + Nagel (Messagerie National):Trafic Routier:": "0.170",
+    "Palette:National:Kuehne + Nagel (Affrêtement National):Trafic Routier:": "0.188",
+    "Palette:National:DHL Freight (National):Trafic Routier:": "0.377",
+    "Palette:National:Qualitair et Sea (National) - Depuis Pontarlier jusqu'à l'aéroport de LYS ou le port de FOS SUR MER:Trafic Routier:": "0.120",
+
+    // EXPORT - Colis Standard
+    "Colis Standard:International:DPD (International):Trafic Routier:": "0.291",
+    "Colis Standard:International:Fedex (Économie Express International):Trafic Routier:": "0.120",
+
+    // EXPORT - Colis Express
+    "Colis Express:International:Fedex (Express International):Trafic Aérien:": "0.960",
+    "Colis Express:International:DHL Express (Monde):Trafic Routier:": "1.02",
+    "Colis Express:International:DSV (International):Trafic Aérien:": "0.837",
+
+    // EXPORT - Palette
+    "Palette:International:Idoux (International):Trafic Routier:": "0.340",
+    "Palette:International:Kuehne + Nagel (Messagerie International):Trafic Routier:": "0.209",
+    "Palette:International:DHL Freight (Messagerie International):Trafic Routier:": "0.158",
+    "Palette:International:DHL Freight (Messagerie International Express):Trafic Routier:": "0.223",
+    "Palette:International:Dachser (Messagerie International):Trafic Routier:": "0.244",
+    "Palette:International:Ovrsea (International):Trafic Maritime:": "0.065",
+    "Palette:International:Ovrsea (International):Trafic Aérien:": "0.899",
+    "Palette:International:M&M (International) - Partie Route + Mer Groupage:Trafic Routier:": "0.096",
+    "Palette:International:DB Schenker (International):Trafic Routier:": "0.180",
+    "Palette:International:M&M (International) - Partie Route + Groupage Aérien:Trafic Aérien:": "0.530",
+    "Palette:International:Qualitair et Sea (International) - Depuis l'aéroport de LYS juqu'à l'aéroport du pays client:Trafic Aérien:": "0.971",
+    "Palette:International:Qualitair et Sea (International) - Depuis FOS SUR MER jusqu'au port du pays client:Trafic Maritime:": "0.015",
+    "Palette:International:Qualitair et Sea (International) - Depuis l'aéroport ou le port du pays client jusqu'au client final:Trafic Routier:": "0.119",
+  };
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const selectZone = document.getElementById("zoneGeographique");
+  const selectTransporteur = document.getElementById("transporteur");
+
+  // On stocke toutes les options de base du transporteur
+  const toutesLesOptions = Array.from(selectTransporteur.options);
+
+  function filtrerTransporteurs() {
+    const zone = selectZone.value;
+
+    // On vide le select transporteur
+    selectTransporteur.innerHTML = "";
+
+    // On garde uniquement les transporteurs qui contiennent le mot correspondant
+    const optionsFiltrées = toutesLesOptions.filter(option =>
+      zone === "National"
+        ? option.text.includes("National")
+        : option.text.includes("International")
+    );
+
+    // On ajoute les options filtrées dans le select
+    optionsFiltrées.forEach(option => {
+      selectTransporteur.appendChild(option);
+    });
+  }
+
+  // Appliquer le filtre dès le chargement de la page
+  filtrerTransporteurs();
+
+  // Refiltrer à chaque changement de la zone
+  selectZone.addEventListener("change", filtrerTransporteurs);
+});
+</script>
+
+<!-- Script ajouté comme demandé -->
+<script name="impact-co2" src="https://impactco2.fr/iframe.js" data-type="comparateur" data-search="?value=0&comparisons=voiturethermique,tgv,streamingvideo,hotel,lavelinge,repasavecduboeuf,livraisondomicile,tshirtencoton&language=fr&theme=default"></script>
+</body>
+</html>
+
